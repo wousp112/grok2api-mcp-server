@@ -20,7 +20,7 @@
     "twitter",
     "x"
   ],
-  "author": "",
+  "author": "wousp112",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",

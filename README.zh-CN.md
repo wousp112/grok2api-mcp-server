@@ -276,7 +276,6 @@ npm install
 ## 致谢
 
 - [grok2api](https://github.com/chenyme/grok2api) by chenyme — 通过 OpenAI 兼容接口提供 Grok 访问能力的后端项目
-- [Model Context Protocol](https://modelcontextprotocol.io/) by Anthropic
 
 ## 许可证
 

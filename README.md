@@ -276,7 +276,6 @@ Returns runtime metrics: call counts, error distribution, uptime.
 ## Acknowledgements
 
 - [grok2api](https://github.com/chenyme/grok2api) by chenyme — the backend that makes Grok accessible via OpenAI-compatible API
-- [Model Context Protocol](https://modelcontextprotocol.io/) by Anthropic
 
 ## License
 
