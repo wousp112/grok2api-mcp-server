@@ -142,7 +142,7 @@ uv run main.py
 **方案 A：全局安装（推荐）**
 
 ```bash
-git clone https://github.com/wousp112/grok-mcp-server.git
+git clone https://github.com/wousp112/grok2api-mcp-server.git
 cd grok-mcp-server
 cp .env.example .env
 # 编辑 .env，填入你的 API 地址和密钥
@@ -153,7 +153,7 @@ npm link
 **方案 B：本地安装**
 
 ```bash
-git clone https://github.com/wousp112/grok-mcp-server.git
+git clone https://github.com/wousp112/grok2api-mcp-server.git
 cd grok-mcp-server
 cp .env.example .env
 # 编辑 .env，填入你的 API 地址和密钥

@@ -142,7 +142,7 @@ The `GROK_API_KEY` in your `.env` is the admin key configured in grok2api (the `
 **Option A: Global install (recommended)**
 
 ```bash
-git clone https://github.com/wousp112/grok-mcp-server.git
+git clone https://github.com/wousp112/grok2api-mcp-server.git
 cd grok-mcp-server
 cp .env.example .env
 # Edit .env with your API URL and key
@@ -153,7 +153,7 @@ npm link
 **Option B: Local install**
 
 ```bash
-git clone https://github.com/wousp112/grok-mcp-server.git
+git clone https://github.com/wousp112/grok2api-mcp-server.git
 cd grok-mcp-server
 cp .env.example .env
 # Edit .env with your API URL and key
