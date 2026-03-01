@@ -1,0 +1,33 @@
+{
+  "name": "grok-mcp-server",
+  "version": "1.2.0",
+  "description": "MCP server for real-time web search via Grok API — structured results with sources, confidence scores, and multi-language support",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "grok-mcp-server": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "mcp",
+    "grok",
+    "web-search",
+    "model-context-protocol",
+    "ai",
+    "real-time-search",
+    "twitter",
+    "x"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "axios": "^1.13.6",
+    "dotenv": "^17.3.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
