@@ -1,8 +1,10 @@
-<div align="right">
-  <a href="./README.zh-CN.md">中文</a>
-</div>
+<div align="center">
 
 # Grok MCP Server
+
+**English** · [中文](./README.zh-CN.md)
+
+</div>
 
 An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that provides real-time web search via [Grok](https://x.ai/grok). Returns structured results with source URLs, confidence scores, key points, and multi-language support.
 

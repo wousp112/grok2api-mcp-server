@@ -1,8 +1,10 @@
-<div align="right">
-  <a href="./README.md">English</a>
-</div>
+<div align="center">
 
 # Grok MCP Server
+
+[English](./README.md) · **中文**
+
+</div>
 
 基于 [MCP（模型上下文协议）](https://modelcontextprotocol.io/) 的实时网络搜索服务器，由 [Grok](https://x.ai/grok) 提供支持。返回结构化结果，包含来源 URL、置信度评分、关键要点，支持多语言输出。
 
