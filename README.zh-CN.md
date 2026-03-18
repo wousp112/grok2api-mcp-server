@@ -6,12 +6,16 @@
 
 </div>
 
-基于 [MCP（模型上下文协议）](https://modelcontextprotocol.io/) 的实时网络搜索服务器，由 [Grok](https://x.ai/grok) 提供支持。返回结构化结果，包含来源 URL、置信度评分、关键要点，支持多语言输出。
+基于 [MCP（模型上下文协议）](https://modelcontextprotocol.io/) 的实时网络搜索服务器，并附带一个稳定的本地 CLI，由 [Grok](https://x.ai/grok) 提供支持。返回结构化结果，包含来源 URL、置信度评分、关键要点，支持多语言输出。
 
 ## 工作原理
 
 ```
 Claude / Cursor 等  ──MCP──>  grok-mcp-server  ──HTTP──>  grok2api  ──>  Grok
+```
+
+```text
+Codex / shell / 脚本  ──CLI──>  grok-search-cli  ──HTTP──>  grok2api  ──>  Grok
 ```
 
 本服务器将 MCP 客户端桥接到兼容 [grok2api](https://github.com/chenyme/grok2api) 的后端，通过 OpenAI 兼容接口提供 Grok 的实时网络搜索能力。
@@ -26,7 +30,10 @@ Claude / Cursor 等  ──MCP──>  grok-mcp-server  ──HTTP──>  grok2
 - **来源新鲜度控制** — 优先显示近期内容
 - **域名白名单偏好** — 优先可信来源（best-effort）
 - **自动重试** — 指数退避策略
+- **同时支持 stdio 和 HTTP MCP** 传输方式
+- **兼容 SSE 响应解析** — 即使上游在 `stream: false` 时返回 `text/event-stream`，也能正确提取结果
 - **运行时指标** — 通过 `grok_stats` 工具查看
+- **稳定的直连 CLI 路径** — 适合长耗时 Grok 搜索
 
 ## 前置条件
 
@@ -160,6 +167,42 @@ cp .env.example .env
 npm install
 ```
 
+## 稳定 CLI 路径
+
+如果宿主环境里的 MCP 传输层在长耗时 Grok 搜索下不稳定，优先直接使用 CLI。
+
+```bash
+node ./bin/grok-search-cli.js --query "OpenAI Codex subagents GPT-5.4 mini site:x.com" --max-sources 3
+```
+
+示例输出：
+
+```json
+{
+  "ok": true,
+  "model": "grok-4.20-beta",
+  "attempts": 1,
+  "elapsed_ms": 67518,
+  "query": "OpenAI Codex subagents GPT-5.4 mini site:x.com",
+  "first_source_url": "https://x.com/OpenAI/status/2033953592424731072",
+  "sources": [
+    "https://x.com/OpenAI/status/2033953592424731072",
+    "https://x.com/AlphaSignalAI/status/2033961817861402660",
+    "https://x.com/DeepakNesss/status/2034230371806831054"
+  ]
+}
+```
+
+参数：
+
+- `--query` 或 `-q`：必填
+- `--max-sources N`：可选，默认 `3`
+- `--timeout-sec N`：可选，默认 `180`
+- `--retries N`：可选，默认 `1`；超时或上游 `5xx` 时重试
+- `--raw`：把原始 assistant 文本一并放进 JSON 输出
+
+这是 `grok-4.20-beta` 的推荐稳定路径。慢搜索按常态处理，CLI 默认会自动重试一次，而不是快速失败。
+
 ## 配置
 
 将 `.env.example` 复制为 `.env` 并填写配置：
@@ -168,11 +211,31 @@ npm install
 |--------|------|--------|------|
 | `GROK_API_URL` | **是** | — | grok2api 端点地址（如 `http://your-server:8000/v1`） |
 | `GROK_API_KEY` | **是** | — | 身份验证 API 密钥 |
-| `GROK_MODEL` | 否 | `grok-3` | Grok 模型名称 |
-| `GROK_REQUEST_TIMEOUT_MS` | 否 | `60000` | 请求超时时间（毫秒） |
+| `GROK_MODEL` | 否 | `grok-4.20-beta` | Grok 模型名称 |
+| `GROK_REQUEST_TIMEOUT_MS` | 否 | `90000` | 单次请求超时时间（毫秒） |
 | `GROK_MAX_RETRIES` | 否 | `2` | 最大重试次数 |
 | `GROK_BACKOFF_BASE_MS` | 否 | `800` | 重试基础退避时间（毫秒） |
 | `GROK_READ_TIMEOUT_MS` | 否 | 同请求超时 | Axios 超时时间（毫秒） |
+| `GROK_TOTAL_TIMEOUT_MS` | 否 | `110000` | 所有重试共用的总时间预算（毫秒） |
+| `GROK_MCP_HTTP_PORT` | 否 | — | 设置后以 HTTP MCP 模式启动，而不是 stdio |
+| `GROK_MCP_DEBUG_LOG` | 否 | — | 可选，写入调试生命周期日志的文件路径 |
+
+### 传输模式
+
+- 默认：`stdio` MCP，适合 Claude Desktop / Claude Code / Cursor 这类本地集成
+- 可选：HTTP MCP，当某些客户端的本地 `stdio` 桥不稳定时更稳
+
+启动 HTTP 模式：
+
+```bash
+GROK_MCP_HTTP_PORT=8787 node index.js
+```
+
+然后把 MCP 客户端指向：
+
+```text
+http://127.0.0.1:8787/mcp
+```
 
 ## MCP 客户端配置
 
@@ -235,6 +298,8 @@ npm install
 ### `grok_web_search`
 
 通过 Grok 搜索网络或 Twitter/X，返回结构化结果。
+
+服务器同时兼容标准 OpenAI 风格 JSON completion 和 Grok 代理常见的 SSE 文本流响应；如果上游在非流式请求下仍返回 `text/event-stream`，工具也会尝试正确还原最终内容。
 
 | 参数 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|------|--------|------|
