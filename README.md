@@ -6,12 +6,16 @@
 
 </div>
 
-An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that provides real-time web search via [Grok](https://x.ai/grok). Returns structured results with source URLs, confidence scores, key points, and multi-language support.
+An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server and companion CLI for real-time web search via [Grok](https://x.ai/grok). Returns structured results with source URLs, confidence scores, key points, and multi-language support.
 
 ## How It Works
 
 ```
 Claude / Cursor / etc.  ──MCP──>  grok-mcp-server  ──HTTP──>  grok2api  ──>  Grok
+```
+
+```text
+Codex / shell / scripts  ──CLI──>  grok-search-cli  ──HTTP──>  grok2api  ──>  Grok
 ```
 
 This server bridges MCP clients to a [grok2api](https://github.com/chenyme/grok2api)-compatible backend, exposing Grok's real-time web search through an OpenAI-compatible API.
@@ -26,8 +30,10 @@ This server bridges MCP clients to a [grok2api](https://github.com/chenyme/grok2
 - **Source freshness control** — prefer recent sources
 - **Domain allowlist preference** — prioritize trusted domains (best-effort)
 - **Automatic retries** with exponential backoff
+- **Supports both stdio and HTTP MCP** transports
 - **SSE-compatible response parsing** — handles backends that return `text/event-stream` payloads even when `stream: false`
 - **Runtime metrics** via `grok_stats` tool
+- **Stable direct CLI path** for long-running Grok search calls
 
 ## Prerequisites
 
@@ -161,6 +167,42 @@ cp .env.example .env
 npm install
 ```
 
+## Stable CLI Path
+
+If your host environment has trouble keeping MCP transport stable for long Grok searches, use the CLI directly.
+
+```bash
+node ./bin/grok-search-cli.js --query "OpenAI Codex subagents GPT-5.4 mini site:x.com" --max-sources 3
+```
+
+Example output:
+
+```json
+{
+  "ok": true,
+  "model": "grok-4.20-beta",
+  "attempts": 1,
+  "elapsed_ms": 67518,
+  "query": "OpenAI Codex subagents GPT-5.4 mini site:x.com",
+  "first_source_url": "https://x.com/OpenAI/status/2033953592424731072",
+  "sources": [
+    "https://x.com/OpenAI/status/2033953592424731072",
+    "https://x.com/AlphaSignalAI/status/2033961817861402660",
+    "https://x.com/DeepakNesss/status/2034230371806831054"
+  ]
+}
+```
+
+Flags:
+
+- `--query` or `-q`: required
+- `--max-sources N`: optional, default `3`
+- `--timeout-sec N`: optional, default `180`
+- `--retries N`: optional, default `1`; retries on timeout or upstream `5xx`
+- `--raw`: include the raw assistant text in the JSON output
+
+This is the recommended stable path for `grok-4.20-beta`. Slow search is treated as normal, and the CLI will retry once by default instead of failing fast.
+
 ## Configuration
 
 Copy `.env.example` to `.env` and fill in your values:
@@ -169,11 +211,31 @@ Copy `.env.example` to `.env` and fill in your values:
 |----------|----------|---------|-------------|
 | `GROK_API_URL` | **Yes** | — | Your grok2api endpoint (e.g. `http://your-server:8000/v1`) |
 | `GROK_API_KEY` | **Yes** | — | API key for authentication |
-| `GROK_MODEL` | No | `grok-3` | Grok model name |
-| `GROK_REQUEST_TIMEOUT_MS` | No | `60000` | Request timeout (ms) |
+| `GROK_MODEL` | No | `grok-4.20-beta` | Grok model name |
+| `GROK_REQUEST_TIMEOUT_MS` | No | `90000` | Per-attempt request timeout (ms) |
 | `GROK_MAX_RETRIES` | No | `2` | Max retry attempts |
 | `GROK_BACKOFF_BASE_MS` | No | `800` | Base backoff delay for retries (ms) |
 | `GROK_READ_TIMEOUT_MS` | No | Same as request timeout | Axios timeout (ms) |
+| `GROK_TOTAL_TIMEOUT_MS` | No | `110000` | Total wall-clock budget across retries (ms) |
+| `GROK_MCP_HTTP_PORT` | No | — | If set, start an HTTP MCP server on this port instead of stdio |
+| `GROK_MCP_DEBUG_LOG` | No | — | Optional file path for debug lifecycle logs |
+
+### Transport Modes
+
+- Default: `stdio` MCP, suitable for Claude Desktop / Claude Code / Cursor style local integrations
+- Optional: HTTP MCP, useful when a client's local stdio bridge is unstable
+
+Run HTTP mode:
+
+```bash
+GROK_MCP_HTTP_PORT=8787 node index.js
+```
+
+Then point an MCP client at:
+
+```text
+http://127.0.0.1:8787/mcp
+```
 
 ## MCP Client Configuration
 

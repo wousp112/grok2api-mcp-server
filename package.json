@@ -5,10 +5,12 @@
   "main": "index.js",
   "type": "module",
   "bin": {
-    "grok-mcp-server": "./index.js"
+    "grok-mcp-server": "./index.js",
+    "grok-search-cli": "./bin/grok-search-cli.js"
   },
   "scripts": {
     "start": "node index.js",
+    "search": "node ./bin/grok-search-cli.js",
     "test": "node --test"
   },
   "keywords": [
